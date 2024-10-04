@@ -1,9 +1,6 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿// Copyright (c) 2024 .NET Foundation and Contributors. All rights reserved.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
 
-[assembly: InternalsVisibleTo("Akavache.Tests")]
-[assembly: InternalsVisibleTo("Akavache.Sqlite3")]
-[assembly: InternalsVisibleTo("Akavache.Mac")]
-[assembly: InternalsVisibleTo("Akavache.Mobile")]
-[assembly: InternalsVisibleTo("Akavache.Deprecated")]
+[assembly: Akavache.Core.Preserve]

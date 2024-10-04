@@ -1,38 +1,57 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Splat;
-using System.Reactive;
-using ReactiveUI;
-using System.Reactive.Concurrency;
+﻿// Copyright (c) 2024 .NET Foundation and Contributors. All rights reserved.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
 
-namespace Akavache.Mobile
+using Akavache.Core;
+using Newtonsoft.Json;
+using ReactiveUI;
+using Splat;
+
+namespace Akavache.Mobile;
+
+/// <summary>
+/// Registrations for the mobile platform. Will register all our instances with splat.
+/// </summary>
+[Preserve(AllMembers = true)]
+public class Registrations : IWantsToRegisterStuff
 {
-    public class Registrations : IWantsToRegisterStuff
+    /// <inheritdoc />
+    public void Register(IMutableDependencyResolver resolver, IReadonlyDependencyResolver readonlyDependencyResolver)
     {
-        public void Register(IMutableDependencyResolver resolver)
+#if NETSTANDARD || XAMARINIOS || XAMARINMAC || XAMARINTVOS || TIZEN || MONOANDROID13_0
+        if (resolver is null)
         {
-            resolver.Register(() => new JsonSerializerSettings() 
+            throw new ArgumentNullException(nameof(resolver));
+        }
+#else
+        ArgumentNullException.ThrowIfNull(resolver);
+#endif
+
+        resolver.Register(
+            () => new JsonSerializerSettings
             {
                 ObjectCreationHandling = ObjectCreationHandling.Replace,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.All,
-            }, typeof(JsonSerializerSettings), null);
+            },
+            typeof(JsonSerializerSettings),
+            null);
 
-            var akavacheDriver = new AkavacheDriver();
-            resolver.Register(() => akavacheDriver, typeof(ISuspensionDriver), null);
+        var akavacheDriver = new AkavacheDriver();
+        resolver.Register(() => akavacheDriver, typeof(ISuspensionDriver), null);
 
-            // NB: These correspond to the hacks in Akavache.Http's registrations
-            resolver.Register(() => resolver.GetService<ISuspensionHost>().ShouldPersistState,
-                typeof(IObservable<IDisposable>), "ShouldPersistState");
+        // NB: These correspond to the hacks in Akavache.Http's registrations
+        resolver.Register(
+            () => readonlyDependencyResolver.GetService<ISuspensionHost>()?.ShouldPersistState ?? throw new InvalidOperationException("Unable to resolve ISuspensionHost, probably ReactiveUI is not initialized."),
+            typeof(IObservable<IDisposable>),
+            "ShouldPersistState");
 
-            resolver.Register(() => resolver.GetService<ISuspensionHost>().IsUnpausing,
-                typeof(IObservable<Unit>), "IsUnpausing");
+        resolver.Register(
+            () => readonlyDependencyResolver.GetService<ISuspensionHost>()?.IsUnpausing ?? throw new InvalidOperationException("Unable to resolve ISuspensionHost, probably ReactiveUI is not initialized."),
+            typeof(IObservable<Unit>),
+            "IsUnpausing");
 
-            resolver.Register(() => RxApp.TaskpoolScheduler, typeof(IScheduler), "Taskpool");
-        }
+        resolver.Register(() => RxApp.TaskpoolScheduler, typeof(IScheduler), "Taskpool");
     }
 }

@@ -1,37 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Akavache.Sqlite3.Internal;
-using Xunit;
+﻿// Copyright (c) 2024 .NET Foundation and Contributors. All rights reserved.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
 
-namespace Akavache.Tests
+using AsyncLock = Akavache.Sqlite3.Internal.AsyncLock;
+
+namespace Akavache.Tests;
+
+/// <summary>
+/// Tests the <see cref="AsyncLock"/> class.
+/// </summary>
+public class AsyncLockTests
 {
-    public class AsyncLockTests
+    /// <summary>
+    /// Makes sure that the AsyncLock class handles cancellation correctly.
+    /// </summary>
+    [Fact]
+    public void HandlesCancellation()
     {
-        [Fact]
-        public void HandlesCancellation()
-        {
-            var asyncLock = new AsyncLock();
-            var lockOne = asyncLock.LockAsync();
+        var asyncLock = new AsyncLock();
+        var lockOne = asyncLock.LockAsync();
 
-            var cts = new CancellationTokenSource();
-            var lockTwo = asyncLock.LockAsync(cts.Token);
+        var cts = new CancellationTokenSource();
+        var lockTwo = asyncLock.LockAsync(cts.Token);
 
-            Assert.True(lockOne.IsCompleted);
-            Assert.Equal(TaskStatus.RanToCompletion, lockOne.Status);
-            Assert.NotNull(lockOne.Result);
+        Assert.True(lockOne.IsCompleted);
+        Assert.Equal(TaskStatus.RanToCompletion, lockOne.Status);
+        Assert.NotNull(lockOne.Result);
 
-            Assert.False(lockTwo.IsCompleted);
+        Assert.False(lockTwo.IsCompleted);
 
-            cts.Cancel();
+        cts.Cancel();
 
-            Assert.True(lockTwo.IsCompleted);
-            Assert.True(lockTwo.IsCanceled);
+        Assert.True(lockTwo.IsCompleted);
+        Assert.True(lockTwo.IsCanceled);
 
-            lockOne.Result.Dispose();
-        }
+        lockOne.Result.Dispose();
     }
 }
